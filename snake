@@ -1,0 +1,95 @@
+windowwidth = 400
+windowheight = 400
+playersize = 10
+startsize = 5
+pygame.init()
+win = pygame.display.set_mode((windowwidth, windowheight))
+pygame.display.set_caption("snake")
+font = pygame.font.Font(None, 50)
+clock = pygame.time.Clock()
+
+class snake(object):
+    def __init__(self):
+        self.pos = np.array([200, 200])
+        self.dir = playersize*np.array([1,0])
+        self.len = startsize
+        self.prevpos = [np.array([200, 200])]
+    
+    def move(self):
+        self.pos += self.dir
+        self.prevpos.append(self.pos.copy())
+        self.prevpos = self.prevpos[-self.len-1:]
+        
+    def checkdead(self):
+        if self.pos[0] < 1 or self.pos[0] > 399:
+            return True
+        if self.pos[1] < 1 or self.pos[1] > 399:
+            return True
+        if list(self.pos) in [list(item) for item in self.prevpos[:-1]]:
+            return True
+        
+    def reset(self):
+        self.pos = np.array([200, 200])
+        self.dir = playersize*np.array([1,0])
+        self.len = startsize
+        self.prevpos = [np.array([200, 200])]
+
+        
+class apple(object):
+    def __init__(self, pos):
+        self.pos = pos
+        self.score = 0
+    
+    def eaten(self):
+        self.pos = np.random.uniform(10, 390, 2)
+        self.score += 1
+        
+player = snake()
+def redraw(goal, player):
+    win.fill((0,0,0))
+    for pos in player.prevpos:
+        pygame.draw.rect(win, (0, 255, 0), (pos[0] - playersize//2, pos[1] - playersize//2, playersize, playersize ))
+        pygame.draw.rect(win, (255, 0, 0), (goal.pos[0] - playersize//2, goal.pos[1] - playersize//2, playersize, playersize ))
+
+def check_eaten(player, apple):
+    if np.linalg.norm(player.pos - apple.pos) < 11:
+        apple.eaten()
+        player.len += 1
+        
+        
+def rungame():
+    goal = apple(np.random.uniform(10, 390, 2))
+    
+    run=True
+    while run:
+        clock.tick(20)
+        keys = pygame.key.get_pressed()
+        
+        if keys[pygame.K_a]:
+            if (player.dir != np.array([1,0])).all():
+                player.dir = playersize*np.array([-1,0])
+        if keys[pygame.K_d]:
+            if (player.dir != np.array([-1,0])).all():
+                player.dir = playersize*np.array([1,0])
+        if keys[pygame.K_w]:
+            if (player.dir != np.array([0,1])).all():
+                player.dir = playersize*np.array([0,-1])
+        if keys[pygame.K_s]:
+            if (player.dir != np.array([0,-1])).all():
+                player.dir = playersize*np.array([0,1])
+        
+        
+        player.move()
+        check_eaten(player, goal)
+        redraw(goal, player)
+        pygame.display.update()
+        
+        dead = player.checkdead()
+        if dead == True:
+            player.reset()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                
+        pygame.event.pump()
